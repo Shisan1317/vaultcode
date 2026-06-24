@@ -1,0 +1,49 @@
+from scripts.building import building
+from scripts.helper import path_helper
+from scripts.helper import env_helper
+
+# 实例化一个编译对象
+builder = building.Builder()
+
+# 获取当前路径
+cwd = path_helper.current_dir()
+
+# 编译开关，从.config文件中获取
+module_switch = builder.get_module_switch(cwd)
+
+# 当前模块参与编译的源码文件是源码白名单和源码黑名单差集(支持通配符)
+src_white_list = ["main.c"]
+src_black_list = []
+
+# 头文件路径列表
+include_path_list = [path_helper.path_join(env_helper.get_env("ROOT_DIR"), "include"),
+                    path_helper.path_join(env_helper.get_env("ROOT_DIR"), "src")]
+
+# 依赖库列表
+dep_lib_list = ["vault", "pthread", "m", "dl"]
+
+# 依赖库路径列表
+dep_lib_path_list = [path_helper.path_join(env_helper.get_env("OUTPUT_PATH"), "static_lib"),
+                     path_helper.path_join(env_helper.get_env("ROOT_DIR"),"libs", 
+                        "increase_sdk", "lib", env_helper.get_env("ARCH_TYPE"),"static_lib")]
+
+# 编译选项列表(这里可以给模块侧传宏)
+flags_list = ["-DSUPPORT_UTL_SYS_LOG"]
+
+# 只有编译开关打开才进行后续编译操作
+if module_switch:
+    # 先尝试递归执行子一级的脚本
+    builder.traverse_sconscript(cwd)
+    # 通过源码黑白名单获取本模块参与编译的源码文件
+    src_flies = builder.filter_src_files(cwd=cwd,
+                                        white_list=src_white_list,
+                                        black_list=src_black_list)
+    # 执行模块编译
+    builder.build_module(cwd,
+                        src_files=src_flies,
+                        include_path_list=include_path_list,
+                        dep_lib_list=dep_lib_list,
+                        dep_lib_path_list=dep_lib_path_list,
+                        flags_list=flags_list)
+    # 编译成可执行文件
+    builder.do_building("app_example")

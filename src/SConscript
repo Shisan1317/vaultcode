@@ -1,0 +1,51 @@
+from scripts.building import building
+from scripts.helper import path_helper
+from scripts.helper import env_helper
+
+# 实例化一个编译对象
+builder = building.Builder()
+
+# 获取当前路径
+cwd = path_helper.current_dir()
+
+# 编译开关，从.config文件中获取
+module_switch = builder.get_module_switch(cwd)
+
+# 当前模块参与编译的源码文件是源码白名单和源码黑名单差集(支持通配符)
+src_white_list = []
+src_black_list = []
+
+# 头文件路径列表
+include_path_list = [path_helper.path_join(env_helper.get_env("ROOT_DIR"),"libs", "increase_sdk", "include")]
+
+# 依赖库列表
+dep_lib_list = ["inep", "pthread", "m" ,"dl"]
+
+# 依赖库路径列表
+dep_lib_path_list = [path_helper.path_join(env_helper.get_env("ROOT_DIR"),"libs", "increase_sdk", "lib", env_helper.get_env("ARCH_TYPE"), "static_lib")]
+
+# 编译选项列表(这里可以给模块侧传宏)
+flags_list = ["-DSUPPORT_UTL_SYS_LOG"]
+
+# 只有编译开关打开才进行后续编译操作
+if module_switch:
+    # 先尝试递归执行子一级的脚本
+    builder.traverse_sconscript(cwd)
+    # 通过源码黑白名单获取本模块参与编译的源码文件
+    src_flies = builder.filter_src_files(cwd=cwd,
+                                        white_list=src_white_list,
+                                        black_list=src_black_list)
+    # 执行模块编译
+    builder.build_module(cwd,
+                        src_files=src_flies,
+                        include_path_list=include_path_list,
+                        dep_lib_list=dep_lib_list,
+                        dep_lib_path_list=dep_lib_path_list,
+                        flags_list=flags_list)
+    # lgy note: 这里想要编译成动态库，必须同样的链接inep的库也为动态库，因为动态库的符号是位置无关的
+    # lgy note: 如果只是需要编译成静态库，那么inep链接哪个库都行，只是链动态库会强制每个应用也要同时链inep动态库
+    # 暂时把vault也编译成库吧
+    builder.build_static_library("vault.a")
+    # builder.build_shared_library("vault.so")
+    # 为了sdk的头文件清晰,后续所有进程都从target/include目录拿头文件，如需inep的头文件从libs里面拿
+    builder.copy_header()   # 可能里面有的头文件符号是不暴露的，但前期先全部暴露，打包vault的所有头文件到target/include里面，待优化...
