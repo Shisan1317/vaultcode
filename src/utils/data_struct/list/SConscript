@@ -1,0 +1,49 @@
+from scripts.building import building
+from scripts.helper import path_helper
+from scripts.helper import env_helper
+
+Import('builder')
+
+# 获取当前路径
+cwd = path_helper.current_dir()
+
+# 编译开关
+module_switch = builder.get_module_switch(cwd)
+
+# 源码文件
+src_white_list = ['*.c']
+src_black_list = []
+
+# 头文件路径:需要 common(类型/错误码) 和 platform(互斥锁)
+include_path_list = [
+    cwd,
+    path_helper.path_join(builder.src_dir, 'utils/common'),
+    path_helper.path_join(builder.src_dir, 'utils/platform'),
+]
+
+# 依赖库(需要 pthread 用于 os_mutex)
+dep_lib_list = ['pthread']
+
+# 依赖库路径
+dep_lib_path_list = []
+
+# 编译选项
+flags_list = ['-DSUPPORT_UTL_SYS_LOG']
+
+if module_switch:
+    builder.traverse_sconscript(cwd)
+
+    src_files = builder.filter_src_files(
+        cwd=cwd,
+        white_list=src_white_list,
+        black_list=src_black_list
+    )
+
+    builder.build_module(
+        cwd,
+        src_files=src_files,
+        include_path_list=include_path_list,
+        dep_lib_list=dep_lib_list,
+        dep_lib_path_list=dep_lib_path_list,
+        flags_list=flags_list
+    )

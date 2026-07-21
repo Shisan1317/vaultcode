@@ -1,0 +1,13 @@
+# data_struct 父模块编译脚本 — 递归遍历子模块(list/hash/string/queue/ringbuf...)
+Import('builder')
+from scripts.helper import path_helper
+from scripts.helper import env_helper
+cwd = path_helper.current_dir()
+module_switch = builder.get_module_switch(cwd)
+src_white_list = []; src_black_list = []
+include_path_list = [path_helper.path_join(env_helper.get_env("SRC_DIR"), "utils/common")]
+dep_lib_list = []; dep_lib_path_list = []; flags_list = []
+if module_switch:
+    builder.traverse_sconscript(cwd)
+    src_files = builder.filter_src_files(cwd=cwd, white_list=src_white_list, black_list=src_black_list)
+    builder.build_module(cwd, src_files=src_files, include_path_list=include_path_list, dep_lib_list=dep_lib_list, dep_lib_path_list=dep_lib_path_list, flags_list=flags_list)

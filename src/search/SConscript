@@ -1,0 +1,9 @@
+Import('builder')
+from scripts.helper import path_helper
+cwd = path_helper.current_dir()
+module_switch = builder.get_module_switch(cwd)
+include_path_list = [cwd, path_helper.path_join(builder.src_dir, 'utils/common'), path_helper.path_join(builder.src_dir, 'utils/data_struct/hash')]
+if module_switch:
+    builder.traverse_sconscript(cwd)
+    src_files = builder.filter_src_files(cwd=cwd, white_list=['utl_search.c'], black_list=[])
+    builder.build_module(cwd, src_files=src_files, include_path_list=include_path_list, dep_lib_list=[], dep_lib_path_list=[], flags_list=[])

@@ -1,0 +1,3 @@
+# common 模块编译脚本 — 纯头文件,无需编译任何 .c 文件
+# 头文件路径由 src/SConscript 的 include_path_list 统一管理
+# 此文件的存在仅为了保持目录结构完整性和未来的可扩展性

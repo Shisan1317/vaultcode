@@ -1,0 +1,62 @@
+from scripts.building import building
+from scripts.helper import path_helper
+from scripts.helper import env_helper
+
+Import('builder')
+
+# 获取当前路径
+cwd = path_helper.current_dir()
+
+# 编译开关
+module_switch = builder.get_module_switch(cwd)
+
+# 根据目标架构判断使用哪个平台的实现
+arch_type = env_helper.get_env('ARCH_TYPE', '')
+if 'android' in arch_type.lower():
+    plat_dir = 'android'
+elif 'apple' in arch_type.lower():
+    plat_dir = 'apple'
+elif 'linux' in arch_type.lower():
+    plat_dir = 'linux'
+elif 'windows' in arch_type.lower():
+    plat_dir = 'windows'
+else:
+    plat_dir = 'linux'
+
+# 平台源码黑白名单(从子目录取 .c 文件)
+src_white_list = [plat_dir + '/*.c']
+src_black_list = []
+
+# 头文件路径(平台接口头文件位于当前目录,实现位于子目录)
+include_path_list = [
+    cwd,
+    path_helper.path_join(builder.src_dir, 'utils/common'),
+]
+
+# 依赖库列表
+dep_lib_list = ['pthread']
+
+# 依赖库路径
+dep_lib_path_list = []
+
+# 编译选项
+flags_list = ['-DSUPPORT_UTL_SYS_LOG']
+
+if module_switch:
+    # 先执行子目录的 SConscript(如果有)
+    builder.traverse_sconscript(cwd)
+
+    src_files = builder.filter_src_files(
+        cwd=cwd,
+        white_list=src_white_list,
+        black_list=src_black_list
+    )
+
+    builder.build_module(
+        cwd,
+        src_files=src_files,
+        include_path_list=include_path_list,
+        dep_lib_list=dep_lib_list,
+        dep_lib_path_list=dep_lib_path_list,
+        flags_list=flags_list
+    )

@@ -2,48 +2,63 @@ from scripts.building import building
 from scripts.helper import path_helper
 from scripts.helper import env_helper
 
-# 实例化一个编译对象
+# 实例化编译对象用于收集模块
 builder = building.Builder()
-
-# 获取当前路径
 cwd = path_helper.current_dir()
-
-# 编译开关，从.config文件中获取
 module_switch = builder.get_module_switch(cwd)
 
-# 当前模块参与编译的源码文件是源码白名单和源码黑名单差集(支持通配符)
-src_white_list = ["main.c"]
-src_black_list = []
+# 通用配置
+include_path_list = [
+    path_helper.path_join(env_helper.get_env("ROOT_DIR"), "include"),
+    path_helper.path_join(env_helper.get_env("ROOT_DIR"), "src"),
+    path_helper.path_join(env_helper.get_env("SRC_DIR"), "utils/common"),
+    path_helper.path_join(env_helper.get_env("SRC_DIR"), "utils/platform"),
+    path_helper.path_join(env_helper.get_env("SRC_DIR"), "note"),
+    path_helper.path_join(env_helper.get_env("SRC_DIR"), "vault"),
+    path_helper.path_join(env_helper.get_env("SRC_DIR"), "search"),
+    path_helper.path_join(env_helper.get_env("SRC_DIR"), "server"),
+    path_helper.path_join(env_helper.get_env("SRC_DIR"), "utils/data_struct/string"),
+]
 
-# 头文件路径列表
-include_path_list = [path_helper.path_join(env_helper.get_env("ROOT_DIR"), "include"),
-                    path_helper.path_join(env_helper.get_env("ROOT_DIR"), "src")]
-
-# 依赖库列表
 dep_lib_list = ["vault", "pthread", "m", "dl"]
-
-# 依赖库路径列表
-dep_lib_path_list = [path_helper.path_join(env_helper.get_env("OUTPUT_PATH"), "static_lib"),
-                     path_helper.path_join(env_helper.get_env("ROOT_DIR"),"libs", 
-                        "increase_sdk", "lib", env_helper.get_env("ARCH_TYPE"),"static_lib")]
-
-# 编译选项列表(这里可以给模块侧传宏)
+dep_lib_path_list = [
+    path_helper.path_join(env_helper.get_env("OUTPUT_PATH"), "static_lib"),
+    path_helper.path_join(env_helper.get_env("ROOT_DIR"), "libs",
+                          "increase_sdk", "lib", env_helper.get_env("ARCH_TYPE"), "static_lib"),
+]
 flags_list = ["-DSUPPORT_UTL_SYS_LOG"]
 
-# 只有编译开关打开才进行后续编译操作
 if module_switch:
-    # 先尝试递归执行子一级的脚本
     builder.traverse_sconscript(cwd)
-    # 通过源码黑白名单获取本模块参与编译的源码文件
-    src_flies = builder.filter_src_files(cwd=cwd,
-                                        white_list=src_white_list,
-                                        black_list=src_black_list)
-    # 执行模块编译
-    builder.build_module(cwd,
-                        src_files=src_flies,
-                        include_path_list=include_path_list,
-                        dep_lib_list=dep_lib_list,
-                        dep_lib_path_list=dep_lib_path_list,
-                        flags_list=flags_list)
-    # 编译成可执行文件
+
+    # 编译 main.c → app_example (保留原demo)
+    main_files = builder.filter_src_files(cwd=cwd, white_list=["main.c"], black_list=[])
+    builder.build_module(cwd, src_files=main_files,
+                         include_path_list=include_path_list,
+                         dep_lib_list=dep_lib_list,
+                         dep_lib_path_list=dep_lib_path_list,
+                         flags_list=flags_list)
     builder.do_building("app_example")
+
+    # 编译 server.c → vaultd
+    server_files = builder.filter_src_files(cwd=cwd, white_list=["server.c"], black_list=[])
+    if server_files:
+        # 创建单独编译环境
+        srv_builder = building.Builder(flags_list=flags_list)
+        srv_builder.build_module(cwd, src_files=server_files,
+                                 include_path_list=include_path_list,
+                                 dep_lib_list=dep_lib_list,
+                                 dep_lib_path_list=dep_lib_path_list,
+                                 flags_list=flags_list)
+        srv_builder.do_building("vaultd")
+
+    # 编译 cli.c → vault-cli
+    cli_files = builder.filter_src_files(cwd=cwd, white_list=["cli.c"], black_list=[])
+    if cli_files:
+        cli_builder = building.Builder(flags_list=flags_list)
+        cli_builder.build_module(cwd, src_files=cli_files,
+                                 include_path_list=include_path_list,
+                                 dep_lib_list=dep_lib_list,
+                                 dep_lib_path_list=dep_lib_path_list,
+                                 flags_list=flags_list)
+        cli_builder.do_building("vault-cli")

@@ -1,0 +1,41 @@
+# utils 父模块编译脚本 — 递归遍历子模块(list/hash/string/queue...)
+Import('builder')
+from scripts.helper import path_helper
+from scripts.helper import env_helper
+
+# 获取当前路径
+cwd = path_helper.current_dir()
+
+# 编译开关
+module_switch = builder.get_module_switch(cwd)
+
+# utils 父模块本身不编译任何源码,只负责递归子模块
+src_white_list = []
+src_black_list = []
+
+include_path_list = [
+    path_helper.path_join(env_helper.get_env("SRC_DIR"), "utils/common"),
+]
+
+dep_lib_list = []
+dep_lib_path_list = []
+flags_list = []
+
+if module_switch:
+    # 递归执行子模块的 SConscript(list/hash/string/queue...)
+    builder.traverse_sconscript(cwd)
+
+    src_files = builder.filter_src_files(
+        cwd=cwd,
+        white_list=src_white_list,
+        black_list=src_black_list
+    )
+
+    builder.build_module(
+        cwd,
+        src_files=src_files,
+        include_path_list=include_path_list,
+        dep_lib_list=dep_lib_list,
+        dep_lib_path_list=dep_lib_path_list,
+        flags_list=flags_list
+    )
