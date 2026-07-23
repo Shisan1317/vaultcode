@@ -49,16 +49,28 @@ typedef struct {
 
 /* ---- API ---- */
 
+/**
+ * @brief Open a vault rooted at a directory.
+ * @param[out] vault Caller-owned handle released with vault_close.
+ */
 utl_err_t vault_open(const char *root_path, vault_t **vault);
+
+/// @brief Release the vault handle without deleting its directory or note files.
 void      vault_close(vault_t *vault);
 
 /* CRUD */
+
+/// @brief Create and index a note; an identical existing path returns UTL_ERR_EXIST.
 utl_err_t vault_note_create(vault_t *v, const char *rel_path, const char *content);
+
+/// @brief Copy a note to caller storage; release its copied content with note_free.
 utl_err_t vault_note_get(vault_t *v, const char *rel_path, note_t *note);
 utl_err_t vault_note_update(vault_t *v, const char *rel_path, const char *content);
 utl_err_t vault_note_delete(vault_t *v, const char *rel_path);
 
 /* List */
+
+/// @brief List matching notes in unspecified order into caller-provided storage.
 utl_err_t vault_note_list(vault_t *v, const char *folder,
                           vault_entry_t *entries, int max, int *count);
 

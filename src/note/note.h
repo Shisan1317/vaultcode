@@ -61,20 +61,22 @@ typedef struct {
 
 /* ---- API ---- */
 
-/// @brief Parse note from .md file content
+/// @brief Parse note content up to NOTE_MAX_CONTENT bytes, inclusive
 utl_err_t note_parse(const char *path, const char *raw_content,
                      size_t raw_size, note_t *note);
 
-/// @brief Free note heap memory (content field)
+/// @brief Free content, set it to NULL, and safely allow repeated calls on the same freed note
 void note_free(note_t *note);
 
 /// @brief Extract plain filename (without extension) from file path as default title
 void note_filename_to_title(const char *path, char *title, size_t size);
 
-/// @brief Extract all [[wikilinks]] from content, populate links array
+/// @brief Extract the first NOTE_MAX_LINKS wikilinks in scan order
+/// @note Excess links and NUL-terminated unclosed links are ignored with UTL_OK.
 utl_err_t note_extract_links(const char *content, note_t *note);
 
-/// @brief Extract all #tags from content, populate tags array (no dedup)
+/// @brief Extract the first NOTE_MAX_TAGS tags in scan order
+/// @note Excess tags and body tags at least NOTE_TAG_MAX_LEN characters long are ignored.
 utl_err_t note_extract_tags(const char *content, note_t *note);
 
 UTL_EXTERN_C_END

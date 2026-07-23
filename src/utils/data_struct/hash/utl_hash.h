@@ -69,8 +69,8 @@ void      utl_hash_destroy(utl_hash_t *hash);
  *===========================================================================*/
 
 utl_err_t utl_hash_put(utl_hash_t *hash, void *key, void *value);
-utl_err_t utl_hash_get(const utl_hash_t *hash, void *key, void **value);
-utl_err_t utl_hash_remove(utl_hash_t *hash, void *key);
+utl_err_t utl_hash_get(const utl_hash_t *hash, const void *key, void **value);
+utl_err_t utl_hash_remove(utl_hash_t *hash, const void *key);
 utl_err_t utl_hash_contains(const utl_hash_t *hash, void *key, bool *found);
 utl_err_t utl_hash_clear(utl_hash_t *hash);
 utl_err_t utl_hash_size(const utl_hash_t *hash, size_t *size);

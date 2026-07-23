@@ -120,7 +120,7 @@ utl_err_t note_extract_tags(const char *content, note_t *note)
     note->tag_count = 0;
 
     while (*p) {
-        if (*p == '#' && prv_is_word_boundary(p, (int)(p - content))) {
+        if (*p == '#' && prv_is_word_boundary(content, (int)(p - content))) {
             /* Exclude # followed by space/digit/special chars */
             if (isalpha((unsigned char)p[1]) || p[1] == '_') {
                 const char *start = p + 1;

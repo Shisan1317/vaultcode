@@ -15,5 +15,10 @@ script_files = [
     'app/SConscript',   
 ]
 
+# 测试脚本只在显式请求 test target 时加载，避免普通构建运行测试。
+# scons -c test 同样会包含 test，因此可以清理测试及其构建依赖。
+if 'test' in COMMAND_LINE_TARGETS:
+    script_files.append('tests/SConscript')
+
 # 按顺序执行编译脚本
 SConscript(script_files)

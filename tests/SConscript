@@ -1,0 +1,54 @@
+import json
+import subprocess
+
+from SCons.Script import Action, Alias, AlwaysBuild, Environment, File
+
+from scripts.helper import env_helper
+from scripts.helper import path_helper
+
+
+tests_dir = path_helper.current_dir()
+src_dir = env_helper.get_env('SRC_DIR')
+output_dir = env_helper.get_env('OUTPUT_PATH')
+
+test_env = Environment(
+    CC=env_helper.get_env('CC'),
+    CFLAGS=json.loads(env_helper.get_env('CFLAGS') or '[]'),
+    CPPPATH=[
+        tests_dir,
+        path_helper.path_join(src_dir, 'note'),
+        path_helper.path_join(src_dir, 'search'),
+        path_helper.path_join(src_dir, 'utils', 'common'),
+        path_helper.path_join(src_dir, 'vault'),
+    ],
+    LIBS=['pthread', 'm', 'dl'],
+)
+
+test_sources = [
+    File(path_helper.path_join(tests_dir, 'test_main.c')),
+    File(path_helper.path_join(tests_dir, 'test_smoke.c')),
+    File(path_helper.path_join(tests_dir, 'test_note.c')),
+    File(path_helper.path_join(tests_dir, 'test_vault.c')),
+]
+
+# Use the archive node as a linker input instead of relying only on -lvault.
+# SCons then knows that a clean `scons test` must build libvault.a first.
+vault_library = File(path_helper.path_join(
+    output_dir, 'static_lib', 'libvault.a'))
+
+test_program = test_env.Program(
+    target=path_helper.path_join(output_dir, 'tests', 'vaultcode_tests'),
+    source=test_sources + [vault_library],
+)
+
+def run_tests(target, source, env):
+    del target, env
+    return subprocess.call([source[0].abspath])
+
+
+test_alias = Alias(
+    'test',
+    test_program,
+    Action(run_tests, cmdstr='Running VaultCode test suite'),
+)
+AlwaysBuild(test_alias)

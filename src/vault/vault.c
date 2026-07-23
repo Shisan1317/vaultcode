@@ -153,7 +153,11 @@ static void prv_rebuild_backlinks(vault_t *v)
                 if (UTL_FAIL(utl_hash_get(v->notes, src->links[i], (void **)&dst))) {
                     /* Try append .md extension */
                     char with_md[NOTE_MAX_PATH];
-                    snprintf(with_md, sizeof(with_md), "%s.md", src->links[i]);
+                    size_t link_len = strlen(src->links[i]);
+                    if (link_len > sizeof(with_md) - sizeof(".md"))
+                        continue;
+                    memcpy(with_md, src->links[i], link_len);
+                    memcpy(with_md + link_len, ".md", sizeof(".md"));
                     if (UTL_FAIL(utl_hash_get(v->notes, with_md, (void **)&dst)))
                         continue;
                 }
@@ -333,9 +337,14 @@ utl_err_t vault_note_delete(vault_t *v, const char *rel_path)
     prv_full_path(v, rel_path, abs, sizeof(abs));
     unlink(abs);
 
+    utl_err_t remove_result = utl_hash_remove(v->notes, rel_path);
+    if (UTL_FAIL(remove_result)) {
+        os_mutex_unlock(v->mutex);
+        return remove_result;
+    }
+
     note_free(found);
     free(found);
-    utl_hash_remove(v->notes, (void *)rel_path);  /* cast away const for key */
     search_remove(v->search, rel_path);
     prv_rebuild_backlinks(v);
 

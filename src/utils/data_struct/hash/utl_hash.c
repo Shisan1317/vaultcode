@@ -59,7 +59,7 @@ static uint32_t prv_hash_str(const char *key)
     return hash;
 }
 
-static uint32_t prv_hash(void *key, utl_hash_key_type_t type)
+static uint32_t prv_hash(const void *key, utl_hash_key_type_t type)
 {
     if (type == UTL_HASH_KEY_STR) {
         return prv_hash_str((const char *)key);
@@ -70,7 +70,7 @@ static uint32_t prv_hash(void *key, utl_hash_key_type_t type)
 }
 
 /* ---- Key comparison ---- */
-static bool prv_key_eq(void *a, void *b, utl_hash_key_type_t type)
+static bool prv_key_eq(const void *a, const void *b, utl_hash_key_type_t type)
 {
     if (type == UTL_HASH_KEY_STR) {
         return (a != NULL && b != NULL && strcmp((const char *)a, (const char *)b) == 0);
@@ -167,7 +167,7 @@ utl_err_t utl_hash_put(utl_hash_t *hash, void *key, void *value)
     return UTL_OK;
 }
 
-utl_err_t utl_hash_get(const utl_hash_t *hash, void *key, void **value)
+utl_err_t utl_hash_get(const utl_hash_t *hash, const void *key, void **value)
 {
     if (!hash || !key || !value) return UTL_ERR_NULL;
     prv_lock((utl_hash_t *)hash);
@@ -187,7 +187,7 @@ utl_err_t utl_hash_get(const utl_hash_t *hash, void *key, void **value)
     return UTL_ERR_NOT_FOUND;
 }
 
-utl_err_t utl_hash_remove(utl_hash_t *hash, void *key)
+utl_err_t utl_hash_remove(utl_hash_t *hash, const void *key)
 {
     if (!hash || !key) return UTL_ERR_NULL;
     prv_lock(hash);
